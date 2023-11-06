@@ -64,6 +64,19 @@ class HEI(object):
         self.T_self_atten_enhance.train()
         self.hashing_image.train()
         self.hashing_text.train()
+    
+    def state_dict(self):
+        state_dict = [
+            self.V_self_atten_enhance.state_dict(), self.T_self_atten_enhance.state_dict(),
+            self.hashing_image.state_dict(), self.hashing_text.state_dict()
+        ]
+        return state_dict
+
+    def load_state_dict(self, state_dict):
+        self.V_self_atten_enhance.load_state_dict(state_dict[0])
+        self.T_self_atten_enhance.load_state_dict(state_dict[1])
+        self.hashing_image.load_state_dict(state_dict[2])
+        self.hashing_text.load_state_dict(state_dict[3])
 
     def forward_hash(self, image_embs, cap_embs, volatile=False):
         binary_im = []

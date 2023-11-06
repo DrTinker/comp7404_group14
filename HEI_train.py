@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--learning_rate', default=.0002, type=float, help='Initial learning rate.') 
     opt = parser.parse_args()
 
-    emb_images, emb_caps, cap_lens, matching_scores =  loaddata("./models/model_best.pth.tar", "./data")
+    emb_images, emb_caps, cap_lens, matching_scores =  loaddata("./models/model_best.pth.tar", "./data", split='train')
     # f = open('debugstoredata','wb')
     # pickle.dump(emb_images, f)
     # pickle.dump(emb_caps, f)
@@ -63,7 +63,8 @@ def main():
     for epoch in range(opt.num_epochs):
         print(epoch)
         train(model, emb_images, emb_caps, matching_scores)
-
+    # save
+    torch.save(model.state_dict(), opt.model_name+'/result.pth.tar')
 
 if __name__ == '__main__':
     main()
