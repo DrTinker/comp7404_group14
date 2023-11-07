@@ -94,7 +94,7 @@ def main():
 
     # Load data loaders
     train_loader, val_loader = dataloader.loader.get_loaders(
-        opt.data_name, vocab, opt.batch_size, opt.workers, opt)
+        opt.data_name, vocab, opt.batch_size, opt.workers, opt, train_split='short', dev_split='short')
 
     # Construct the model
     model = BFAN(opt)

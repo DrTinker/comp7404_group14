@@ -4,11 +4,15 @@ from dataloader.loader import get_test_loader
 from evaluation.evaluation import encode_data, shard_xattn
 from modules.BFAN import BFAN
 
-from vocab import deserialize_vocab
+from utils.vocab import deserialize_vocab
 import torch
 
 def loaddata(model_path, data_path=None, split='dev'):
-    checkpoint = torch.load(model_path)
+    checkpoint = None
+    if not torch.cuda.is_available():
+        checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
+    else:
+        checkpoint = torch.load(model_path)
     opt = checkpoint['opt']
 
     if data_path is not None:

@@ -128,6 +128,8 @@ class V_single_modal_atten(nn.Module):
         :param m_v: previous visual memory, shape: (batch_size, image_dim)
         :return: attention weighted encoding, weights
         """
+        # handle input
+        v_t, m_v = v_t.to(torch.float32), m_v.to(torch.float32)
         if torch.cuda.is_available():
             v_t.cuda()
             m_v.cuda()
@@ -217,7 +219,7 @@ class T_single_modal_atten(nn.Module):
         :param m_v: previous visual memory, shape: (batch_size, image_dim)
         :return: attention weighted encoding, weights
         """
-
+        u_t, m_u = u_t.to(torch.float32), m_u.to(torch.float32)
         W_u = self.embedding_1(u_t)
 
         W_u_m = self.embedding_2(m_u)

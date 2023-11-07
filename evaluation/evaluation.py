@@ -99,7 +99,6 @@ def encode_data(model, data_loader, log_step=10, logging=print):
 
         # compute the embeddings
         img_emb, cap_emb, cap_len = model.forward_emb(images, captions, lengths, volatile=True)
-        #print(img_emb)
         if img_embs is None:
             if img_emb.dim() == 3:
                 img_embs = np.zeros((len(data_loader.dataset), img_emb.size(1), img_emb.size(2)))
@@ -108,8 +107,10 @@ def encode_data(model, data_loader, log_step=10, logging=print):
             cap_embs = np.zeros((len(data_loader.dataset), max_n_word, cap_emb.size(2)))
             cap_lens = [0] * len(data_loader.dataset)
         # cache embeddings
+        ids = list(ids)
         img_embs[ids] = img_emb.data.cpu().numpy().copy()
         cap_embs[ids,:max(lengths),:] = cap_emb.data.cpu().numpy().copy()
+
         for j, nid in enumerate(ids):
             cap_lens[nid] = cap_len[j]
 
@@ -248,8 +249,13 @@ def shard_xattn(images, captions, caplens, opt, shard_size=128):
         for j in range(n_cap_shard):
             sys.stdout.write('\r>> shard_xattn batch (%d,%d)' % (i,j))
             cap_start, cap_end = shard_size*j, min(shard_size*(j+1), len(captions))
-            im = Variable(torch.from_numpy(images[im_start:im_end]), volatile=True).cuda()
-            s = Variable(torch.from_numpy(captions[cap_start:cap_end]), volatile=True).cuda()
+            im, s = None, None
+            if not torch.cuda.is_available():
+                im = Variable(torch.from_numpy(images[im_start:im_end]), volatile=True)
+                s = Variable(torch.from_numpy(captions[cap_start:cap_end]), volatile=True)
+            else:
+                im = Variable(torch.from_numpy(images[im_start:im_end]), volatile=True).cuda()
+                s = Variable(torch.from_numpy(captions[cap_start:cap_end]), volatile=True).cuda()
             l = caplens[cap_start:cap_end]
             sim = xattn_score(im, s, l, opt)
             d[im_start:im_end, cap_start:cap_end] = sim.data.cpu().numpy()

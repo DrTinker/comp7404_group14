@@ -136,15 +136,15 @@ def get_precomp_loader(data_path, data_split, vocab, opt, batch_size=100,
     return data_loader
 
 
-def get_loaders(data_name, vocab, batch_size, workers, opt):
+def get_loaders(data_name, vocab, batch_size, workers, opt, train_split='train', dev_split='dev'):
     dpath = os.path.join(opt.data_path, data_name)
 
     # concept file path
     orig_dpath = os.path.join(opt.orig_img_path, opt.orig_data_name)
 
-    train_loader = get_precomp_loader(dpath, 'train', vocab, opt,
+    train_loader = get_precomp_loader(dpath, train_split, vocab, opt,
                                       batch_size, True, workers, drop_last=True)
-    val_loader = get_precomp_loader(dpath, 'dev', vocab, opt,
+    val_loader = get_precomp_loader(dpath, dev_split, vocab, opt,
                                     batch_size, False, workers, drop_last=False)
     return train_loader, val_loader
 

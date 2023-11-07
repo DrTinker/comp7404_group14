@@ -95,7 +95,7 @@ class EncoderImageWeightNormPrecomp(nn.Module):
         # normalize in the joint embedding space
         if not self.no_imgnorm:
             features = l2norm(features, dim=-1)
-
+        
         return features
 
     def load_state_dict(self, state_dict):
@@ -141,14 +141,13 @@ class EncoderText(nn.Module):
 
         # Forward propagate RNN
         out, _ = self.rnn(packed)
-
         # Reshape *final* output to (batch_size, hidden_size)
         padded = pad_packed_sequence(out, batch_first=True)
         cap_emb, cap_len = padded
 
         cap_emb = (cap_emb[:, :, :cap_emb.size(2)//2] +
                    cap_emb[:, :, cap_emb.size(2)//2:])/2
-
+        
         # normalization in the joint embedding space
         if not self.no_txtnorm:
             cap_emb = l2norm(cap_emb, dim=-1)
@@ -404,6 +403,7 @@ class BFAN(object):
 
         # cap_emb (tensor), cap_lens (list)
         cap_emb, cap_lens = self.txt_enc(captions, lengths)
+        
         return img_emb, cap_emb, cap_lens
 
     def forward_loss(self, img_emb, cap_emb, cap_len, **kwargs):
