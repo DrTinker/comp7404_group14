@@ -109,7 +109,7 @@ def main():
     parser.add_argument('--learning_rate', default=.0002, type=float, help='Initial learning rate.') 
     opt = parser.parse_args()
     print('loading model')
-    emb_images, emb_caps, cap_len, _ =  loaddata("./models/model_best.pth.tar", "./data", split='short')
+    emb_images, emb_caps, cap_len, _ =  loaddata("./models/model_best.pth.tar", "./data", split=opt.data_split)
     model = HEI(opt, emb_images.shape[1], emb_caps.shape[1])
     model.load_state_dict(torch.load(opt.model_name + '/result.pth.tar'))
     img_codes, txt_codes = model.forward_hash(emb_images, emb_caps)
