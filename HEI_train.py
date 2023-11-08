@@ -24,6 +24,7 @@ def main():
     parser.add_argument('--vocab_path', default='./vocab/', help='Path to saved vocabulary json files.')
     parser.add_argument('--logger_name', default='./runs/runX/log', help='Path to save Tensorboard log.')
     parser.add_argument('--model_name', default='./models/hei', help='Path to save the model.')
+    parser.add_argument('--data_split', default='dev', help='data split')
     parser.add_argument('--num_epochs', default=30, type=int)
     parser.add_argument('--k', default=64, type=int, help='length of the hashing code.')
     parser.add_argument('--grad_clip', default=2., type=float, help='Gradient clipping threshold.')
@@ -46,7 +47,7 @@ def main():
                         help='Number of GRU layers.')
     opt = parser.parse_args()
 
-    emb_images, emb_caps, cap_lens, matching_scores =  loaddata("./models/model_best.pth.tar", "./data", split='short')
+    emb_images, emb_caps, cap_lens, matching_scores =  loaddata("./models/model_best.pth.tar", "./data", split=opt.data_split)
     print('img: ' + str(emb_images.shape) + ' caps: ' + str(emb_caps.shape))
     # f = open('debugstoredata','wb')
     # pickle.dump(emb_images, f)
@@ -67,6 +68,7 @@ def main():
         print(epoch)
         train(model, emb_images, emb_caps, matching_scores)
     # save
+    os.makedirs(os.path.dirname(opt.model_name), exist_ok=True)
     torch.save(model.state_dict(), opt.model_name+'/result.pth.tar')
 
 if __name__ == '__main__':
