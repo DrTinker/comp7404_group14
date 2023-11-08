@@ -19,6 +19,7 @@ import tensorboard_logger as tb_logger
 
 import argparse
 
+# python BFAN_train.py --data_path "./data" --data_name f30k_precomp --vocab_path "./data/vocab" --logger_name runs/log
 def main():
     # Hyper Parameters
     parser = argparse.ArgumentParser()
@@ -28,6 +29,8 @@ def main():
                         help='path to datasets')
     parser.add_argument('--data_name', default='precomp',
                         help='{coco,f30k}_precomp')
+    parser.add_argument('--data_split', default='train',
+                        help='data split')
     parser.add_argument('--vocab_path', default='./vocab/',
                         help='Path to saved vocabulary json files.')
     parser.add_argument('--margin', default=0.2, type=float,
@@ -93,9 +96,11 @@ def main():
     opt.vocab_size = len(vocab)
 
     # Load data loaders
+    dev_split = 'dev'
+    if opt.data_split!='train':
+        dev_split = opt.data_split
     train_loader, val_loader = dataloader.loader.get_loaders(
-        opt.data_name, vocab, opt.batch_size, opt.workers, opt, train_split='short', dev_split='short')
-
+        opt.data_name, vocab, opt.batch_size, opt.workers, opt, train_split=opt.data_split, dev_split=dev_split)
     # Construct the model
     model = BFAN(opt)
 

@@ -26,6 +26,8 @@ class DenseLayer(nn.Module):
     
     def forward(self, input):
         input = input.to(torch.float32)
+        if torch.cuda.is_available():
+            input = input.to(device='cuda')
         sum_vector = torch.mm(input, self.w)
         # caculate a and weighted value
         vector = []
@@ -50,6 +52,8 @@ class HashingLayer(nn.Module):
             cudnn.benchmark = True
 
     def forward(self, x):
+        if torch.cuda.is_available():
+            x = x.to(device='cuda')
         x = self.fc(x)
         x = torch.tanh(x)
         return x
