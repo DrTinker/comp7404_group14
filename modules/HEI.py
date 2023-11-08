@@ -1,3 +1,4 @@
+import time
 import torch
 import torch.nn as nn
 import torch.nn.init
@@ -19,7 +20,7 @@ torch.backends.cudnn.enabled = False
 class DenseLayer(nn.Module):
     def __init__(self, embed_size):
         super(DenseLayer, self).__init__()
-        self.w = nn.Parameter(torch.randn(embed_size, 1))
+        self.w = nn.Linear(embed_size, 1)
         if torch.cuda.is_available():
             self.w.cuda()
             cudnn.benchmark = True
@@ -28,17 +29,8 @@ class DenseLayer(nn.Module):
         input = input.to(torch.float32)
         if torch.cuda.is_available():
             input = input.to(device='cuda')
-        sum_vector = torch.mm(input, self.w)
-        # caculate a and weighted value
-        vector = []
-        for i, feature in enumerate(input):
-            weight_value = 0
-            for j in range(len(feature)):
-                if sum_vector[i]==0:
-                    continue
-                a = feature[j]*self.w[j] / sum_vector[i]
-                weight_value += a * feature[j]
-            vector.append(weight_value)
+        vector = self.w(input)
+        vector = vector.squeeze()
         
         return torch.Tensor(vector)
 
@@ -46,14 +38,20 @@ class DenseLayer(nn.Module):
 class HashingLayer(nn.Module):
     def __init__(self, input_size, hash_code_length):
         super(HashingLayer, self).__init__()
+        self.input_size = input_size
         self.fc = nn.Linear(input_size, hash_code_length)
         if torch.cuda.is_available():
             self.fc.cuda()
             cudnn.benchmark = True
 
     def forward(self, x):
+        if len(x)<self.input_size:
+            x = x.repeat(self.input_size)
+        if len(x)>self.input_size:
+            x = x.narrow(0, 0, self.input_size)
         if torch.cuda.is_available():
             x = x.to(device='cuda')
+
         x = self.fc(x)
         x = torch.tanh(x)
         return x
@@ -65,16 +63,18 @@ class HEI(object):
     Captions: (n_caption, max_n_word, d) matrix of captions
     CapLens: (n_caption) array of caption lengths
     """
-    def __init__(self, opt, img_region_num, max_n_word):
+    def __init__(self, opt):
         self.grad_clip = opt.grad_clip
         self.code_length = opt.k
         
-        # self.V_self_atten_enhance = V_single_modal_atten(img_region_num, opt.embed_size, opt.use_BatchNorm, opt.activation_type, opt.dropout_rate, img_region_num)
+        # self.V_self_atten_enhance = V_single_modal_atten(opt.embed_size, opt.embed_size, opt.use_BatchNorm, opt.activation_type, opt.dropout_rate, img_region_num)
         # self.T_self_atten_enhance = T_single_modal_atten(opt.embed_size, opt.use_BatchNorm, opt.activation_type, opt.dropout_rate)
         self.dense_image = DenseLayer(opt.embed_size)
         self.dense_text = DenseLayer(opt.embed_size)
-        self.hashing_image = HashingLayer(img_region_num, opt.k)
-        self.hashing_text = HashingLayer(max_n_word, opt.k)
+        self.hashing_image = HashingLayer(opt.img_region_num, opt.k)
+        self.hashing_text = HashingLayer(opt.max_n_word, opt.k)
+
+        self.Eiters = 0
         
         if torch.cuda.is_available():
             # self.V_self_atten_enhance.cuda()
@@ -87,6 +87,8 @@ class HEI(object):
         
         params = list(self.dense_image.parameters())
         params += list(self.dense_text.parameters())
+        # params = list(self.V_self_atten_enhance.parameters())
+        # params += list(self.T_self_atten_enhance.parameters())
         params += list(self.hashing_image.parameters())
         params += list(self.hashing_text.parameters())
         
@@ -97,12 +99,15 @@ class HEI(object):
     def train_start(self):
         self.dense_image.train()
         self.dense_text.train()
+        # self.V_self_atten_enhance.train()
+        # self.T_self_atten_enhance.train()
         self.hashing_image.train()
         self.hashing_text.train()
     
     def state_dict(self):
         state_dict = [
             self.dense_image.state_dict(), self.dense_text.state_dict(),
+            # self.V_self_atten_enhance.state_dict(), self.T_self_atten_enhance.state_dict(),
             self.hashing_image.state_dict(), self.hashing_text.state_dict()
         ]
         return state_dict
@@ -110,6 +115,8 @@ class HEI(object):
     def load_state_dict(self, state_dict):
         self.dense_image.load_state_dict(state_dict[0])
         self.dense_text.load_state_dict(state_dict[1])
+        # self.V_self_atten_enhance.load_state_dict(state_dict[0])
+        # self.T_self_atten_enhance.load_state_dict(state_dict[1])
         self.hashing_image.load_state_dict(state_dict[2])
         self.hashing_text.load_state_dict(state_dict[3])
         # self.hashing_image.load_state_dict(state_dict[0])
@@ -118,6 +125,7 @@ class HEI(object):
     def forward_hash(self, image_embs, cap_embs, volatile=False):
         binary_im = []
         binary_text = []
+        self.Eiters += 1
         
         image_embs = Variable(torch.from_numpy(image_embs), volatile=volatile)
         cap_embs = Variable(torch.from_numpy(cap_embs), volatile=volatile)
@@ -132,21 +140,27 @@ class HEI(object):
         #     img_means.cuda()
         #     cap_means.cuda()
         for i in range(image_embs.shape[0]):
+            # ins_img, _ = self.V_self_atten_enhance(image_embs[i], img_means[i])
+            
+            # ins_img = Variable(ins_img, volatile=volatile)
+            # if torch.cuda.is_available():
+            #     ins_img.cuda()
             ins_img = self.dense_image(image_embs[i])
             if torch.cuda.is_available():
                 ins_img.cuda()
-
             image_code = self.hashing_image(ins_img)
             if torch.cuda.is_available():
                 image_code.cuda()
-
             binary_im.append(image_code)
             
         for i in range(cap_embs.shape[0]):
+            # ins_cap, _ = self.T_self_atten_enhance(cap_embs[i], cap_means[i])
+            # ins_cap = Variable(ins_cap, volatile=volatile)
+            # if torch.cuda.is_available():
+            #     ins_cap = ins_cap.cuda()
             ins_cap = self.dense_text(cap_embs[i])
             if torch.cuda.is_available():
-                ins_cap = ins_cap.cuda()
-
+                ins_cap.cuda()
             cap_code = self.hashing_text(ins_cap)
             if torch.cuda.is_available():
                 cap_code.cuda()

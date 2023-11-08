@@ -27,11 +27,11 @@ def main():
                         help='the model you want to train: HEI or BFAN')
     parser.add_argument('--data_path', default='./data/',
                         help='path to datasets')
-    parser.add_argument('--data_name', default='precomp',
+    parser.add_argument('--data_name', default='f30k_precomp',
                         help='{coco,f30k}_precomp')
     parser.add_argument('--data_split', default='train',
                         help='data split')
-    parser.add_argument('--vocab_path', default='./vocab/',
+    parser.add_argument('--vocab_path', default='./data/vocab/',
                         help='Path to saved vocabulary json files.')
     parser.add_argument('--margin', default=0.2, type=float,
                         help='Rank loss margin.')

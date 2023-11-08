@@ -130,9 +130,10 @@ class V_single_modal_atten(nn.Module):
         """
         # handle input
         v_t, m_v = v_t.to(torch.float32), m_v.to(torch.float32)
+        
         if torch.cuda.is_available():
-            v_t.cuda()
-            m_v.cuda()
+            v_t.to(device='cuda')
+            m_v.to(device='cuda')
             cudnn.benchmark = True
         W_v = self.embedding_1(v_t)
 
@@ -140,9 +141,9 @@ class V_single_modal_atten(nn.Module):
             W_v_m = self.embedding_2(m_v)
         else:
             W_v_m = self.embedding_2_2(m_v)
-
+        print(' W_v_m: ' + str(W_v_m.shape))
         W_v_m = W_v_m.unsqueeze(1).repeat(1, W_v.size()[1], 1)
-
+        print('W_v: ' + str(W_v.shape) + ' W_v_m: ' + str(W_v_m.shape))
         h_v = W_v.mul(W_v_m)
 
         a_v = self.embedding_3(h_v)
