@@ -32,7 +32,7 @@ class DenseLayer(nn.Module):
         vector = self.w(input)
         vector = vector.squeeze()
         
-        return torch.Tensor(vector)
+        return vector
 
 
 class HashingLayer(nn.Module):
