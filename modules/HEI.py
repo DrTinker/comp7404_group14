@@ -20,6 +20,9 @@ class DenseLayer(nn.Module):
     def __init__(self, embed_size):
         super(DenseLayer, self).__init__()
         self.w = nn.Parameter(torch.randn(embed_size, 1))
+        if torch.cuda.is_available():
+            self.w.cuda()
+            cudnn.benchmark = True
     
     def forward(self, input):
         input = input.to(torch.float32)
@@ -42,6 +45,9 @@ class HashingLayer(nn.Module):
     def __init__(self, input_size, hash_code_length):
         super(HashingLayer, self).__init__()
         self.fc = nn.Linear(input_size, hash_code_length)
+        if torch.cuda.is_available():
+            self.fc.cuda()
+            cudnn.benchmark = True
 
     def forward(self, x):
         x = self.fc(x)
