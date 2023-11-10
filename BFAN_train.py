@@ -57,9 +57,9 @@ def main():
                         help='Number of steps to print and record the log.')
     parser.add_argument('--val_step', default=1500, type=int,
                         help='Number of steps to run validation.')
-    parser.add_argument('--logger_name', default='./runs/runX/log',
+    parser.add_argument('--logger_name', default='./models/bfan/log',
                         help='Path to save Tensorboard log.')
-    parser.add_argument('--model_name', default='./runs/runX/checkpoint',
+    parser.add_argument('--model_name', default='./models/bfan/checkpoint',
                         help='Path to save the model.')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')

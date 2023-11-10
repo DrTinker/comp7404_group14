@@ -28,16 +28,7 @@ def loaddata(model_path, data_path=None, split='dev', roll_n=5):
 
     img_embs = np.array([img_embs[i] for i in range(0, len(img_embs), roll_n)])
 
-    sims = shard_xattn(img_embs, cap_embs, cap_lens, opt, shard_size=128)
-
-    # batch_size = img_embs.shape[0]
-    # r, rt = i2t(batch_size, sims, return_ranks=True)
-    # ri, rti = t2i(batch_size, sims, return_ranks=True)
-    # ar = (r[0] + r[1] + r[2]) / 3
-    # ari = (ri[0] + ri[1] + ri[2]) / 3
-    # rsum = r[0] + r[1] + r[2] + ri[0] + ri[1] + ri[2]
-
-    return img_embs, cap_embs, cap_lens, sims
+    return img_embs, cap_embs, cap_lens
 
 
 def BFAN_model_loader(model_path):

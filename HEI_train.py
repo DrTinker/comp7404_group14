@@ -80,7 +80,7 @@ def main():
     # emb_caps = pickle.load(f)
     # cap_lens = pickle.load(f)
     # matching_scores = pickle.load(f)
-    pre_model = BFAN_model_loader("./models/model_best.pth.tar")
+    pre_model = BFAN_model_loader("./models/bfan/checkpoint/model_best.pth.tar")
     vocab = deserialize_vocab(os.path.join(
         opt.vocab_path, '%s_vocab.json' % opt.data_name))
     opt.vocab_size = len(vocab)
@@ -89,14 +89,15 @@ def main():
     
     model = HEI(opt)
 
-    save_num = 5
+
     for epoch in range(opt.num_epochs):
         print('epoch: ' + str(epoch))
         train(model, pre_model, train_loader, opt, epoch)
-        # save
-        if epoch==save_num:
-            os.makedirs(os.path.dirname(opt.model_name), exist_ok=True)
-            torch.save(model.state_dict(), opt.model_name+'/result%d.pth.tar' %epoch)
+
+        if not os.path.exists(os.path.dirname(opt.model_name)):
+            os.mkdir(os.path.dirname(opt.model_name))
+        torch.save(model.state_dict(), opt.model_name+'/result%d.pth.tar' %epoch)
+
 
 
 def train(model, pre_model, train_loader, opt, epoch):
