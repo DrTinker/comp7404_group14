@@ -132,14 +132,14 @@ def encode_data(model, data_loader, log_step=10, logging=print):
     return img_embs, cap_embs, cap_lens
 
 
-def evalrank(model_path, data_path=None, split='dev', fold5=False):
+def evalrank_without_plugin(model_path, data_path=None, split='dev', fold5=False):
     """
     Evaluate a trained model on either dev or test. If `fold5=True`, 5 fold
     cross-validation is done (only for MSCOCO). Otherwise, the full data is
     used for evaluation.
     """
     # load model and options
-    checkpoint = torch.load(model_path)
+    checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
     opt = checkpoint['opt']
     print(opt)
     if data_path is not None:
@@ -173,26 +173,29 @@ def evalrank(model_path, data_path=None, split='dev', fold5=False):
         sims = shard_xattn(img_embs, cap_embs, cap_lens, opt, shard_size=128)
         
         end = time.time()
-        print("calculate similarity time:", end-start)
+        t = (end-start) / 2
+        print("calculate similarity time: %.3fms" %((end-start)*1000))
 
         batch_size = img_embs.shape[0]
         start1 = time.time()
         r, rt = i2t(batch_size, sims, return_ranks=True)
         end1 = time.time()
-        print("calculate i2t time:", end1-start1)
+        print("calculate i2t time: %.3fms" %((t+end1-start1)*1000))
         start2 = time.time()
         ri, rti = t2i(batch_size, sims, return_ranks=True)
         end2 = time.time()
-        print("calculate t2i time:", end2-start2)
+        print("calculate t2i time: %.3fms" %((t+end2-start2)*1000))
         
         ar = (r[0] + r[1] + r[2]) / 3
         ari = (ri[0] + ri[1] + ri[2]) / 3
         rsum = r[0] + r[1] + r[2] + ri[0] + ri[1] + ri[2]
-        print("rsum: %.1f" % rsum)
-        print("Average i2t Recall: %.1f" % ar)
-        print("Image to text: %.1f %.1f %.1f %.1f %.1f" % r)
-        print("Average t2i Recall: %.1f" % ari)
-        print("Text to image: %.1f %.1f %.1f %.1f %.1f" % ri)
+        # print("rsum: %.1f" % rsum)
+        print("Average i2t Recall: %.3f" % ar)
+        print("Image to text: %.3f %.3f %.3f" % r[:3])
+        # print("Image to text: %.1f %.1f %.1f %.1f %.1f" % r)
+        print("Average t2i Recall: %.3f" % ari)
+        print("Image to text: %.3f %.3f %.3f" % ri[:3])
+        # print("Text to image: %.1f %.1f %.1f %.1f %.1f" % ri)
     else:
         # 5fold cross-validation, only for MSCOCO
         results = []
@@ -231,7 +234,7 @@ def evalrank(model_path, data_path=None, split='dev', fold5=False):
         print("Text to image: %.1f %.1f %.1f %.1f %.1f" %
               mean_metrics[5:10])
 
-    torch.save({'rt': rt, 'rti': rti}, 'ranks.pth.tar')
+    # torch.save({'rt': rt, 'rti': rti}, 'ranks.pth.tar')
 
 
 
@@ -284,9 +287,9 @@ def i2t(npts, sims, return_ranks=False):
         top1[index] = inds[0]
 
     # Compute metrics
-    r1 = 100.0 * len(np.where(ranks < 1)[0]) / len(ranks)
-    r5 = 100.0 * len(np.where(ranks < 5)[0]) / len(ranks)
-    r10 = 100.0 * len(np.where(ranks < 10)[0]) / len(ranks)
+    r1 = 100 * len(np.where(ranks < 1)[0]) / len(ranks)
+    r5 = 100 * len(np.where(ranks < 5)[0]) / len(ranks)
+    r10 = 100 * len(np.where(ranks < 10)[0]) / len(ranks)
     medr = np.floor(np.median(ranks)) + 1
     meanr = ranks.mean() + 1
     if return_ranks:
@@ -314,9 +317,9 @@ def t2i(npts, sims, return_ranks=False):
             top1[5 * index + i] = inds[0]
 
     # Compute metrics
-    r1 = 100.0 * len(np.where(ranks < 1)[0]) / len(ranks)
-    r5 = 100.0 * len(np.where(ranks < 5)[0]) / len(ranks)
-    r10 = 100.0 * len(np.where(ranks < 10)[0]) / len(ranks)
+    r1 = 100 * len(np.where(ranks < 1)[0]) / len(ranks)
+    r5 = 100 * len(np.where(ranks < 5)[0]) / len(ranks)
+    r10 = 100 * len(np.where(ranks < 10)[0]) / len(ranks)
     medr = np.floor(np.median(ranks)) + 1
     meanr = ranks.mean() + 1
     if return_ranks:

@@ -33,7 +33,6 @@ def main():
                         help='Size of a training mini-batch.')
     parser.add_argument('--workers', default=10, type=int,
                         help='Number of data loader workers.')
-    parser.add_argument('--roll_n', default=5, type=int, help='R@n')
     parser.add_argument('--img_region_num', default=36, type=int, help='img_region_num')
     parser.add_argument('--max_n_word', default=40, type=int, help='max_n_word')
     parser.add_argument('--k', default=64, type=int, help='length of the hashing code.')
@@ -105,13 +104,13 @@ def train(model, pre_model, train_loader, opt, epoch):
         # get embs
         img_embs, cap_embs, cap_lens = get_embs(pre_model, images, captions, lengths, ids)
 
-        # roll R@n
-        img_embs = np.array([img_embs[i] for i in range(0, len(img_embs), opt.roll_n)])
+        # 5 fold
+        img_embs = np.array([img_embs[i] for i in range(0, len(img_embs),5)])
         sims = shard_xattn(img_embs, cap_embs, cap_lens, opt, shard_size=128)
         # print('img_embs: ' + str(img_embs.shape) + ' cap_embs: ' + str(cap_embs.shape))
         # Update the model
         model.train_start()
-        model.train_hashing(img_embs, cap_embs, sims)
+        model.train_hashing(img_embs, cap_embs, sims, epoch)
 
         # Print log info
         if model.Eiters % opt.log_step == 0:

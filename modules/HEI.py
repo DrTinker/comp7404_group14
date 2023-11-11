@@ -201,12 +201,12 @@ class HEI(object):
             loss += (sum_of_loss_1 / N_p + sum_of_loss_2 / sum_of_indicator)  #  Ni_plus = 
         return loss
 
-    def train_hashing(self, images, captions, score):
+    def train_hashing(self, images, captions, score, epoch):
         binary_im, binary_text = self.forward_hash(images, captions)
         # print('binary_im: ' + str(binary_im) + ' binary_text: ' + str(binary_text))
         self.optimizer.zero_grad()
         loss = self.forward_loss(binary_im, binary_text, score)
-        print("loss:")
+        print("epoch: %d loss: "%epoch)
         print(loss)
 
         loss.backward()
