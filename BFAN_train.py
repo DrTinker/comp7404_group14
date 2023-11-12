@@ -23,7 +23,7 @@ import argparse
 def main():
     # Hyper Parameters
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default='HEI',
+    parser.add_argument('--model', default='BFAN',
                         help='the model you want to train: HEI or BFAN')
     parser.add_argument('--data_path', default='./data/',
                         help='path to datasets')

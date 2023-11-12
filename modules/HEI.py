@@ -206,7 +206,7 @@ class HEI(object):
         # print('binary_im: ' + str(binary_im) + ' binary_text: ' + str(binary_text))
         self.optimizer.zero_grad()
         loss = self.forward_loss(binary_im, binary_text, score)
-        print("epoch: %d loss: "%epoch)
+        print('epoch: %d loss:' %epoch)
         print(loss)
 
         loss.backward()
